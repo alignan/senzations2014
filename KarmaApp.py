@@ -47,7 +47,7 @@ buttonPin_severe = 2
 buttonPin_assistant = 3
 
 sensor_mic = "A0"
-SENSOR_MIC_THR = 250
+SENSOR_MIC_THR = 800
 
 send_led = 7
 recv_led = 8
@@ -59,6 +59,7 @@ pyGal.digitalWrite(send_led, pyGal.LOW)
 pyGal.digitalWrite(recv_led, pyGal.LOW)
 
 my_id = 0
+release_subscribe_lock = 1
 
 data_string = ""
 
@@ -96,6 +97,7 @@ def on_publish(mosq, obj, mid):
     print("MQTT: Message published with ID: " + str(mid))
 
 def on_subscribe(mosq, obj, mid, granted_qos):
+    global release_subscribe_lock
     msg_sub = "MQTT: Subscribed: " + str(mid) + " to " + str(granted_qos)
     if mid == 1:
         msg_sub = msg_sub + TOPIC_ALARM_ASSIST
@@ -108,6 +110,8 @@ def on_subscribe(mosq, obj, mid, granted_qos):
     else:
         msg_sub = "UNKNOWN TOPIC !!! "
     print msg_sub
+
+    release_subscribe_lock = 0
 
 def on_log(mosq, obj, level, string):
     print(string)
@@ -137,7 +141,7 @@ def start_application():
     while True:
         mqttc.loop(1)
 
-        if (lock < 1):
+        if (lock < 1) or (release_subscribe_lock < 1):
 
             pressed_severe = pyGal.digitalRead(buttonPin_severe)
             pressed_assist = pyGal.digitalRead(buttonPin_assistant)
@@ -184,9 +188,12 @@ def start_application():
 
         # Increment the counter
         timeout = timeout + 1
-        if timeout > 100:
+        if timeout > 45:
+            print "\n*** Timeout, unlocking\n"
             lock = 0
             timeout = 0
+            pyGal.digitalWrite(send_led, pyGal.LOW)
+            pyGal.digitalWrite(recv_led, pyGal.LOW)
 
         # and backoff a bit
         time.sleep(0.1)
