@@ -193,7 +193,7 @@ def start_application():
             lock = 0
             timeout = 0
             pyGal.digitalWrite(send_led, pyGal.LOW)
-            pyGal.digitalWrite(recv_led, pyGal.LOW)
+            # pyGal.digitalWrite(recv_led, pyGal.LOW)
 
         # and backoff a bit
         time.sleep(0.1)
